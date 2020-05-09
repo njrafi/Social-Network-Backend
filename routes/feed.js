@@ -11,12 +11,8 @@ router.get("/post/:postID", feedController.getPost);
 router.post(
 	"/post",
 	[
-		body("title")
-			.trim()
-			.isLength({ min: 5 }),
-		body("content")
-			.trim()
-			.isLength({ min: 5 })
+		body("title").trim().isLength({ min: 5 }),
+		body("content").trim().isLength({ min: 5 }),
 	],
 	feedController.createPost
 );

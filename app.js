@@ -28,18 +28,18 @@ app.use((error, req, res, next) => {
 	const status = error.statusCode || 500;
 	const message = error.message;
 	res.status(status).json({
-		message: message
+		message: message,
 	});
 });
 
 mongoose
 	.connect(mongoDbUri, {
 		useNewUrlParser: true,
-		useUnifiedTopology: true
+		useUnifiedTopology: true,
 	})
-	.then(result => {
+	.then((result) => {
 		console.log("connected to mongoDb Database");
 		console.log("server started at port " + secrets.port);
 		app.listen(secrets.port);
 	})
-	.catch(err => console.log(err));
+	.catch((err) => console.log(err));
