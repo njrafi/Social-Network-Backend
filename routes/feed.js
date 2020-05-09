@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Get /feed/posts
 router.get("/posts", feedController.getPosts);
+router.get("/post/:postID", feedController.getPost);
 
 router.post(
 	"/post",

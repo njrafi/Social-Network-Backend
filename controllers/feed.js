@@ -3,20 +3,50 @@ const Post = require("../models/post");
 
 exports.getPosts = (req, res, next) => {
 	console.log("In get Posts");
-	res.status(200).json({
-		posts: [
-			{
-				_id: "1",
-				title: "First Post",
-				content: "This is the first Post!",
-				imageUrl: "/images/duck.jpg",
-				creator: {
-					name: "NJRafi"
-				},
-				createdAt: new Date()
+
+	Post.find()
+		.then(posts => {
+			if (!posts) {
+				const error = new Error("Could not find any Post");
+				error.statusCode = 404;
+				throw error;
 			}
-		]
-	});
+
+			return res.status(200).json({
+				posts: posts
+			});
+		})
+		.catch(err => {
+			if (!err.statusCode) {
+				err.statusCode = 500;
+			}
+			next(err);
+		});
+};
+
+exports.getPost = (req, res, next) => {
+	console.log("In get a single post");
+	const postId = req.params.postID;
+	console.log(postId);
+	Post.findById(postId)
+		.then(post => {
+			if (!post) {
+				const error = new Error("Could not find Post");
+				error.statusCode = 404;
+				throw error;
+			}
+
+			return res.status(200).json({
+				message: "Post Fetched",
+				post: post
+			});
+		})
+		.catch(err => {
+			if (!err.statusCode) {
+				err.statusCode = 500;
+			}
+			next(err);
+		});
 };
 
 exports.createPost = (req, res, next) => {
