@@ -5,8 +5,19 @@ const fs = require("fs");
 
 exports.getPosts = (req, res, next) => {
 	console.log("In get Posts");
+	const currentPage = req.query.page || 1;
+	const perPageItem = 2;
+	let totalItems;
 
 	Post.find()
+		.countDocuments()
+		.then((count) => {
+            totalItems = count;
+            // Pagination
+			return Post.find()
+				.skip((currentPage - 1) * perPageItem)
+				.limit(perPageItem);
+		})
 		.then((posts) => {
 			if (!posts) {
 				const error = new Error("Could not find any Post");
@@ -15,6 +26,7 @@ exports.getPosts = (req, res, next) => {
 			}
 			return res.status(200).json({
 				posts: posts,
+				totalItems: totalItems,
 			});
 		})
 		.catch((err) => {
