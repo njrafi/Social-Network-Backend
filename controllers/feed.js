@@ -26,7 +26,7 @@ exports.getPosts = (req, res, next) => {
 exports.getPost = (req, res, next) => {
 	console.log("In get a single post");
 	const postId = req.params.postID;
-	console.log(postId);
+	console.log("post id: ", postId);
 	Post.findById(postId)
 		.then((post) => {
 			if (!post) {
@@ -60,10 +60,12 @@ exports.createPost = (req, res, next) => {
 	console.log(req.body);
 	const title = req.body.title;
 	const content = req.body.content;
+	const imageUrl = req.file.path.replace("\\" ,"/");;
 	const post = new Post({
 		title: title,
 		content: content,
 		creator: { name: "Nj front" },
+		imageUrl: imageUrl,
 	});
 
 	post

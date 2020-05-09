@@ -4,12 +4,40 @@ const feedRoutes = require("./routes/feed");
 const mongoose = require("mongoose");
 const secrets = require("./secrets");
 const path = require("path");
+const multer = require("multer");
 const mongoDbUri = secrets.mongoDbUri;
 
 const app = express();
 
+const fileStorage = multer.diskStorage({
+	destination: (req, file, cb) => {
+		cb(null, "images");
+	},
+	filename: (req, file, cb) => {
+		cb(
+			null,
+			new Date().toISOString().replace(/:/g, "-") + "-" + file.originalname
+		);
+	},
+});
+
+const fileFilter = (req, file, cb) => {
+	if (
+		file.mimetype === "image/png" ||
+		file.mimetype === "image/jpg" ||
+		file.mimetype === "image/jpeg"
+	) {
+		cb(null, true);
+	} else {
+		cb(null, false);
+	}
+};
+
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(bodyParser.json());
+app.use(
+	multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
+);
 
 app.use((req, res, next) => {
 	res.setHeader("Access-Control-Allow-Origin", "*");
