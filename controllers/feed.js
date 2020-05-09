@@ -97,6 +97,11 @@ exports.updatePost = (req, res, next) => {
 	if (req.file) imageUrl = req.file.path.replace("\\", "/");
 	Post.findById(postId)
 		.then((post) => {
+			if (!post) {
+				const error = new Error("Could not find Post");
+				error.statusCode = 404;
+				throw error;
+			}
 			post.title = title;
 			post.content = content;
 			if (imageUrl) {
@@ -112,6 +117,33 @@ exports.updatePost = (req, res, next) => {
 			return res.status(201).json({
 				message: "Post Edited Successfully!",
 				post: result,
+			});
+		})
+		.catch((err) => {
+			if (!err.statusCode) {
+				err.statusCode = 500;
+			}
+			next(err);
+		});
+};
+
+exports.deletePost = (req, res, next) => {
+	console.log("In Delete post");
+	const postId = req.params.postID;
+	Post.findById(postId)
+		.then((post) => {
+			if (!post) {
+				const error = new Error("Could not find Post");
+				error.statusCode = 404;
+				throw error;
+			}
+			if (post.imageUrl) deleteImage(post.imageUrl);
+			return Post.deleteOne({ _id: postId });
+		})
+		.then((result) => {
+			console.log("Post Deleted Successfully");
+			return res.status(200).json({
+				message: "Post Deleted Successfully!",
 			});
 		})
 		.catch((err) => {
