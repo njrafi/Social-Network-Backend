@@ -1,5 +1,7 @@
 const { validationResult } = require("express-validator");
 const Post = require("../models/post");
+const path = require("path");
+const fs = require("fs");
 
 exports.getPosts = (req, res, next) => {
 	console.log("In get Posts");
@@ -60,7 +62,7 @@ exports.createPost = (req, res, next) => {
 	console.log(req.body);
 	const title = req.body.title;
 	const content = req.body.content;
-	const imageUrl = req.file.path.replace("\\" ,"/");;
+	const imageUrl = req.file.path.replace("\\", "/");
 	const post = new Post({
 		title: title,
 		content: content,
@@ -84,4 +86,45 @@ exports.createPost = (req, res, next) => {
 			}
 			next(err);
 		});
+};
+
+exports.updatePost = (req, res, next) => {
+	console.log("In update post");
+	const postId = req.params.postID;
+	const title = req.body.title;
+	const content = req.body.content;
+	let imageUrl = "";
+	if (req.file) imageUrl = req.file.path.replace("\\", "/");
+	Post.findById(postId)
+		.then((post) => {
+			post.title = title;
+			post.content = content;
+			if (imageUrl) {
+				if (post.imageUrl) deleteImage(post.imageUrl);
+				post.imageUrl = imageUrl;
+			}
+			// TODO: Delete previous URL
+			return post.save();
+		})
+		.then((result) => {
+			console.log(result);
+			console.log("Post Edited Successfully!");
+			return res.status(201).json({
+				message: "Post Edited Successfully!",
+				post: result,
+			});
+		})
+		.catch((err) => {
+			if (!err.statusCode) {
+				err.statusCode = 500;
+			}
+			next(err);
+		});
+};
+
+const deleteImage = (filePath) => {
+	filePath = path.join(__dirname, "..", filePath);
+	fs.unlink(filePath, (err) => {
+		console.log(err);
+	});
 };
