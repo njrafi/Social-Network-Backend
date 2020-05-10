@@ -13,6 +13,7 @@ exports.getPosts = async (req, res, next) => {
 		const totalItems = await Post.find().countDocuments();
 		// Pagination
 		const posts = await Post.find()
+			.sort({ createdAt: -1 })
 			.skip((currentPage - 1) * perPageItem)
 			.limit(perPageItem)
 			.populate("creator");
