@@ -4,39 +4,32 @@ const User = require("../models/user");
 const path = require("path");
 const fs = require("fs");
 
-exports.getPosts = (req, res, next) => {
+exports.getPosts = async (req, res, next) => {
 	console.log("In get Posts");
 	const currentPage = req.query.page || 1;
 	const perPageItem = 2;
-	let totalItems;
-
-	Post.find()
-		.countDocuments()
-		.then((count) => {
-			totalItems = count;
-			// Pagination
-			return Post.find()
-				.skip((currentPage - 1) * perPageItem)
-				.limit(perPageItem)
-				.populate("creator");
-		})
-		.then((posts) => {
-			if (!posts) {
-				const error = new Error("Could not find any Post");
-				error.statusCode = 404;
-				throw error;
-			}
-			return res.status(200).json({
-				posts: posts,
-				totalItems: totalItems,
-			});
-		})
-		.catch((err) => {
-			if (!err.statusCode) {
-				err.statusCode = 500;
-			}
-			next(err);
+	try {
+		const totalItems = await Post.find().countDocuments();
+		// Pagination
+		const posts = await Post.find()
+			.skip((currentPage - 1) * perPageItem)
+			.limit(perPageItem)
+			.populate("creator");
+		if (!posts) {
+			const error = new Error("Could not find any Post");
+			error.statusCode = 404;
+			throw error;
+		}
+		res.status(200).json({
+			posts: posts,
+			totalItems: totalItems,
 		});
+	} catch (err) {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+	}
 };
 
 exports.getPost = (req, res, next) => {
