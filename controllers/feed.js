@@ -132,7 +132,7 @@ exports.updatePost = (req, res, next) => {
 			}
 			if (post.creator != req.userId) {
 				const error = new Error("Can not edit other's post");
-				error.statusCode = 401;
+				error.statusCode = 403;
 				throw error;
 			}
 			post.title = title;
@@ -169,14 +169,21 @@ exports.deletePost = (req, res, next) => {
 				const error = new Error("Could not find Post");
 				error.statusCode = 404;
 				throw error;
-            }
-            if (post.creator != req.userId) {
+			}
+			if (post.creator != req.userId) {
 				const error = new Error("Can not Delete other's post");
-				error.statusCode = 401;
+				error.statusCode = 403;
 				throw error;
 			}
 			if (post.imageUrl) deleteImage(post.imageUrl);
-			return Post.deleteOne({ _id: postId });
+			return Post.findByIdAndRemove(postId);
+		})
+		.then((result) => {
+			return User.findById(req.userId);
+		})
+		.then((user) => {
+			user.posts.pull(postId);
+			return user.save();
 		})
 		.then((result) => {
 			console.log("Post Deleted Successfully");
