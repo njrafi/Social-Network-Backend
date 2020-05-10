@@ -12,8 +12,8 @@ exports.getPosts = (req, res, next) => {
 	Post.find()
 		.countDocuments()
 		.then((count) => {
-            totalItems = count;
-            // Pagination
+			totalItems = count;
+			// Pagination
 			return Post.find()
 				.skip((currentPage - 1) * perPageItem)
 				.limit(perPageItem);
@@ -46,6 +46,7 @@ exports.getPost = (req, res, next) => {
 			if (!post) {
 				const error = new Error("Could not find Post");
 				error.statusCode = 404;
+				error.data = errors.array();
 				throw error;
 			}
 
@@ -69,6 +70,7 @@ exports.createPost = (req, res, next) => {
 	if (!errors.isEmpty()) {
 		const error = new Error("Validation Failed, Entered Data is incorrect.");
 		error.statusCode = 422;
+		error.data = errors.array();
 		throw error;
 	}
 	console.log(req.body);
