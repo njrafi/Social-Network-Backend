@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator");
 const Post = require("../models/post");
+const User = require("../models/user");
 const path = require("path");
 const fs = require("fs");
 
@@ -16,7 +17,8 @@ exports.getPosts = (req, res, next) => {
 			// Pagination
 			return Post.find()
 				.skip((currentPage - 1) * perPageItem)
-				.limit(perPageItem);
+				.limit(perPageItem)
+				.populate("creator");
 		})
 		.then((posts) => {
 			if (!posts) {
@@ -42,6 +44,7 @@ exports.getPost = (req, res, next) => {
 	const postId = req.params.postID;
 	console.log("post id: ", postId);
 	Post.findById(postId)
+		.populate("creator")
 		.then((post) => {
 			if (!post) {
 				const error = new Error("Could not find Post");
@@ -77,21 +80,32 @@ exports.createPost = (req, res, next) => {
 	const title = req.body.title;
 	const content = req.body.content;
 	const imageUrl = req.file.path.replace("\\", "/");
+	const userId = req.userId;
 	const post = new Post({
 		title: title,
 		content: content,
-		creator: { name: "Nj front" },
+		creator: userId,
 		imageUrl: imageUrl,
 	});
+
+	let creator;
 
 	post
 		.save()
 		.then((result) => {
-			console.log(result);
+			return User.findById(userId);
+		})
+		.then((user) => {
+			user.posts.push(post);
+			creator = user;
+			return user.save();
+		})
+		.then((result) => {
 			console.log("Post Created Successfully!");
 			return res.status(201).json({
 				message: "Post Created Successfully!",
-				post: result,
+				post: post,
+				creator: { _id: creator._id, name: creator.name },
 			});
 		})
 		.catch((err) => {
@@ -114,6 +128,11 @@ exports.updatePost = (req, res, next) => {
 			if (!post) {
 				const error = new Error("Could not find Post");
 				error.statusCode = 404;
+				throw error;
+			}
+			if (post.creator != req.userId) {
+				const error = new Error("Can not edit other's post");
+				error.statusCode = 401;
 				throw error;
 			}
 			post.title = title;
@@ -149,6 +168,11 @@ exports.deletePost = (req, res, next) => {
 			if (!post) {
 				const error = new Error("Could not find Post");
 				error.statusCode = 404;
+				throw error;
+            }
+            if (post.creator != req.userId) {
+				const error = new Error("Can not Delete other's post");
+				error.statusCode = 401;
 				throw error;
 			}
 			if (post.imageUrl) deleteImage(post.imageUrl);
