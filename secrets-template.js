@@ -1,3 +1,4 @@
-exports.mongoDbUri =
-exports.port = 4000;
-exports.host = ""
+exports.mongoDbUri = "";
+exports.jwtSecretKey = "";
+exports.port = 0;
+exports.host = "";

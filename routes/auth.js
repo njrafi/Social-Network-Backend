@@ -4,6 +4,18 @@ const authController = require("../controllers/auth");
 const User = require("../models/user");
 const router = express.Router();
 
+router.post(
+	"/login",
+	[
+		body("email")
+			.isEmail()
+			.withMessage("Please enter an Email Address")
+			.normalizeEmail(),
+		body("password").trim().isLength({ min: 5 }),
+	],
+	authController.login
+);
+
 router.put(
 	"/signup",
 	[
