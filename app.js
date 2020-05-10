@@ -74,6 +74,12 @@ mongoose
 	.then((result) => {
 		console.log("connected to mongoDb Database");
 		console.log("server started at port " + secrets.port);
-		app.listen(secrets.port);
+		const server = app.listen(secrets.port);
+
+		// Socket.io Setup
+		const io = require("./socket").init(server);
+		io.on("connection", (socket) => {
+			console.log("Client Connected");
+		});
 	})
 	.catch((err) => console.log(err));

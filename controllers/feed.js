@@ -1,4 +1,5 @@
 const { validationResult } = require("express-validator");
+const io = require("../socket");
 const Post = require("../models/post");
 const User = require("../models/user");
 const path = require("path");
@@ -94,6 +95,11 @@ exports.createPost = (req, res, next) => {
 			return user.save();
 		})
 		.then((result) => {
+			post.creator = creator;
+			io.getIO().emit("posts", {
+				action: "create",
+				post: post,
+			});
 			console.log("Post Created Successfully!");
 			return res.status(201).json({
 				message: "Post Created Successfully!",
@@ -117,13 +123,14 @@ exports.updatePost = (req, res, next) => {
 	let imageUrl = "";
 	if (req.file) imageUrl = req.file.path.replace("\\", "/");
 	Post.findById(postId)
+		.populate("creator")
 		.then((post) => {
 			if (!post) {
 				const error = new Error("Could not find Post");
 				error.statusCode = 404;
 				throw error;
 			}
-			if (post.creator != req.userId) {
+			if (post.creator._id != req.userId) {
 				const error = new Error("Can not edit other's post");
 				error.statusCode = 403;
 				throw error;
@@ -137,12 +144,16 @@ exports.updatePost = (req, res, next) => {
 			// TODO: Delete previous URL
 			return post.save();
 		})
-		.then((result) => {
-			console.log(result);
+		.then((post) => {
+			io.getIO().emit("posts", {
+				action: "update",
+				post: post,
+			});
+			console.log(post);
 			console.log("Post Edited Successfully!");
 			return res.status(201).json({
 				message: "Post Edited Successfully!",
-				post: result,
+				post: post,
 			});
 		})
 		.catch((err) => {
@@ -179,6 +190,10 @@ exports.deletePost = (req, res, next) => {
 			return user.save();
 		})
 		.then((result) => {
+			io.getIO().emit("posts", {
+				action: "delete",
+				postId: postId,
+			});
 			console.log("Post Deleted Successfully");
 			return res.status(200).json({
 				message: "Post Deleted Successfully!",
