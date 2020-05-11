@@ -1,5 +1,4 @@
 const { validationResult } = require("express-validator");
-const io = require("../socket");
 const Post = require("../models/post");
 const User = require("../models/user");
 const path = require("path");
@@ -97,10 +96,6 @@ exports.createPost = (req, res, next) => {
 		})
 		.then((result) => {
 			post.creator = creator;
-			io.getIO().emit("posts", {
-				action: "create",
-				post: post,
-			});
 			console.log("Post Created Successfully!");
 			return res.status(201).json({
 				message: "Post Created Successfully!",
@@ -146,10 +141,6 @@ exports.updatePost = (req, res, next) => {
 			return post.save();
 		})
 		.then((post) => {
-			io.getIO().emit("posts", {
-				action: "update",
-				post: post,
-			});
 			console.log(post);
 			console.log("Post Edited Successfully!");
 			return res.status(201).json({
@@ -191,10 +182,6 @@ exports.deletePost = (req, res, next) => {
 			return user.save();
 		})
 		.then((result) => {
-			io.getIO().emit("posts", {
-				action: "delete",
-				postId: postId,
-			});
 			console.log("Post Deleted Successfully");
 			return res.status(200).json({
 				message: "Post Deleted Successfully!",

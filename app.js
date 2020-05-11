@@ -1,12 +1,12 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const feedRoutes = require("./routes/feed");
-const authRoutes = require("./routes/auth");
-const statusRoutes = require("./routes/status");
 const mongoose = require("mongoose");
 const secrets = require("./secrets");
 const path = require("path");
 const multer = require("multer");
+const graphqlHttp = require("express-graphql");
+const graphqlSchema = require("./graphql/schema");
+const graphqlResolver = require("./graphql/resolver");
 const mongoDbUri = secrets.mongoDbUri;
 
 const app = express();
@@ -51,9 +51,14 @@ app.use((req, res, next) => {
 	next();
 });
 
-app.use("/feed", feedRoutes);
-app.use("/auth", authRoutes);
-app.use("/status", statusRoutes);
+app.use(
+	"/graphql",
+	graphqlHttp({
+		schema: graphqlSchema,
+		rootValue: graphqlResolver,
+		graphiql: true,
+	})
+);
 
 app.use((error, req, res, next) => {
 	console.log(error);
@@ -74,12 +79,6 @@ mongoose
 	.then((result) => {
 		console.log("connected to mongoDb Database");
 		console.log("server started at port " + secrets.port);
-		const server = app.listen(secrets.port);
-
-		// Socket.io Setup
-		const io = require("./socket").init(server);
-		io.on("connection", (socket) => {
-			console.log("Client Connected");
-		});
+		app.listen(secrets.port);
 	})
 	.catch((err) => console.log(err));
