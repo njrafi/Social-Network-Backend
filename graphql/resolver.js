@@ -1,4 +1,5 @@
 const User = require("../models/user");
+const Post = require("../models/post");
 const bcrypt = require("bcryptjs");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
@@ -72,14 +73,13 @@ module.exports = {
 			const user = await User.findOne({ email: email });
 			if (!user) {
 				const error = new Error("User Not found.Check your email");
-				error.code = 422;
+				error.code = 401;
 				throw error;
 			}
 			const passwordMatched = await bcrypt.compare(password, user.password);
-			console.log(passwordMatched);
 			if (!passwordMatched) {
 				const error = new Error("Wrong password");
-				error.code = 422;
+				error.code = 401;
 				throw error;
 			}
 			const token = jwt.sign(
@@ -100,5 +100,53 @@ module.exports = {
 			err.code = 500;
 			throw err;
 		}
+	},
+
+	createPost: async function (args, req) {
+		if (!req.isAuth) {
+			const error = new Error("Not Authinticated");
+			error.code = 401;
+			throw error;
+		}
+
+		console.log("In Create Post");
+		const title = args.postInput.title;
+		const content = args.postInput.content;
+		const imageUrl = args.postInput.imageUrl;
+		const userId = req.userId;
+		const errors = [];
+		if (!validator.isLength(title, { min: 5 })) {
+			errors.push("Title is invalid");
+		}
+		if (!validator.isLength(content, { min: 5 })) {
+			errors.push("Content is invalid");
+		}
+		if (errors.length > 0) {
+			const error = new Error("Invalid Input");
+			error.data = errors;
+			error.code = 422;
+			throw error;
+		}
+		const user = await User.findById(userId);
+		if (!user) {
+			const error = new Error("User Does not exist");
+			error.code = 401;
+			throw error;
+		}
+		const post = new Post({
+			title: title,
+			content: content,
+			creator: user,
+			imageUrl: imageUrl,
+		});
+		const createdPost = await post.save();
+		user.posts.push(createdPost);
+		await user.save();
+		return {
+			...createdPost._doc,
+			_id: createdPost._id.toString(),
+			createdAt: createdPost.createdAt.toISOString(),
+			updatedAt: createdPost.updatedAt.toISOString(),
+		};
 	},
 };
