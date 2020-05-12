@@ -48,6 +48,12 @@ app.use((req, res, next) => {
 		"GET, POST, PUT, PATCH, DELETE"
 	);
 	res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+	// Express graphQl does not permit option request
+	// So we need to send an empty 200 response back
+	if (req.method === "OPTIONS") {
+		return res.sendStatus(200);
+	}
 	next();
 });
 
@@ -72,17 +78,6 @@ app.use(
 		},
 	})
 );
-
-app.use((error, req, res, next) => {
-	console.log(error);
-	const status = error.statusCode || 500;
-	const message = error.message;
-	const errorData = error.data;
-	res.status(status).json({
-		message: message,
-		errorData: errorData,
-	});
-});
 
 mongoose
 	.connect(mongoDbUri, {
