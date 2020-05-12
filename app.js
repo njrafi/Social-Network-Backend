@@ -58,6 +58,25 @@ app.use((req, res, next) => {
 });
 
 app.use(auth);
+
+app.use("/post-image", (req, res, next) => {
+	if (!req.isAuth) {
+		res.status(401).json({
+			message: "Not Authenticated",
+		});
+	}
+	if (!req.file) {
+		return res.status(500).json({
+			message: "No file provided",
+		});
+	}
+	const imageUrl = req.file.path.replace("\\", "/");
+	return res.status(201).json({
+		message: "Image stored successfully",
+		imageUrl: imageUrl,
+	});
+});
+
 app.use(
 	"/graphql",
 	graphqlHttp({
