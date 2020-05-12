@@ -50,6 +50,7 @@ module.exports = buildSchema(`
     type RootQuery {
         login(email: String!, password: String!): AuthData!
         getPosts: PostData!
+        getPost(postId: String!): Post!
     }
 
     schema {

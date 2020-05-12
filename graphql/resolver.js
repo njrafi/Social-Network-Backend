@@ -176,12 +176,6 @@ module.exports = {
 				error.code = 404;
 				throw error;
 			}
-			for (var i = 0; i < posts.length; i++) {
-				console.log(posts[i].createdAt);
-				console.log(posts[i].createdAt.toISOString());
-				posts[i].createdAt = posts[i].createdAt.toISOString();
-				posts[i].updatedAt = posts[i].updatedAt.toISOString();
-			}
 			return {
 				posts: posts.map((p) => {
 					return {
@@ -193,10 +187,34 @@ module.exports = {
 				totalItems: totalItems,
 			};
 		} catch (err) {
-			if (!err.statusCode) {
-				err.statusCode = 500;
+			err.code = 500;
+			throw err;
+		}
+	},
+
+	getPost: async function (args, req) {
+		if (!req.isAuth) {
+			const error = new Error("Not Authinticated");
+			error.code = 401;
+			throw error;
+		}
+		console.log("In get a single Post");
+		const postId = args.postId;
+		try {
+			const post = await Post.findById(postId).populate("creator");
+			if (!post) {
+				const error = new Error("Could not find Post");
+				error.statusCode = 404;
+				throw error;
 			}
-			next(err);
+			return {
+				...post._doc,
+				createdAt: post.createdAt.toISOString(),
+				updatedAt: post.updatedAt.toISOString(),
+			};
+		} catch (err) {
+			err.code = 500;
+			throw err;
 		}
 	},
 };
