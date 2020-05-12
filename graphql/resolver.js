@@ -127,26 +127,76 @@ module.exports = {
 			error.code = 422;
 			throw error;
 		}
-		const user = await User.findById(userId);
-		if (!user) {
-			const error = new Error("User Does not exist");
+		try {
+			const user = await User.findById(userId);
+			if (!user) {
+				const error = new Error("User Does not exist");
+				error.code = 401;
+				throw error;
+			}
+			const post = new Post({
+				title: title,
+				content: content,
+				creator: user,
+				imageUrl: imageUrl,
+			});
+			const createdPost = await post.save();
+			user.posts.push(createdPost);
+			await user.save();
+			return {
+				...createdPost._doc,
+				createdAt: createdPost.createdAt.toISOString(),
+				updatedAt: createdPost.updatedAt.toISOString(),
+			};
+		} catch (err) {
+			err.code = 500;
+			throw err;
+		}
+	},
+
+	getPosts: async function (args, req) {
+		if (!req.isAuth) {
+			const error = new Error("Not Authinticated");
 			error.code = 401;
 			throw error;
 		}
-		const post = new Post({
-			title: title,
-			content: content,
-			creator: user,
-			imageUrl: imageUrl,
-		});
-		const createdPost = await post.save();
-		user.posts.push(createdPost);
-		await user.save();
-		return {
-			...createdPost._doc,
-			_id: createdPost._id.toString(),
-			createdAt: createdPost.createdAt.toISOString(),
-			updatedAt: createdPost.updatedAt.toISOString(),
-		};
+		console.log("In get Posts");
+		const currentPage = req.query.page || 1;
+		const perPageItem = 2;
+		try {
+			const totalItems = await Post.find().countDocuments();
+			// Pagination
+			const posts = await Post.find()
+				.sort({ createdAt: -1 })
+				.skip((currentPage - 1) * perPageItem)
+				.limit(perPageItem)
+				.populate("creator");
+			if (!posts) {
+				const error = new Error("Could not find any Post");
+				error.code = 404;
+				throw error;
+			}
+			for (var i = 0; i < posts.length; i++) {
+				console.log(posts[i].createdAt);
+				console.log(posts[i].createdAt.toISOString());
+				posts[i].createdAt = posts[i].createdAt.toISOString();
+				posts[i].updatedAt = posts[i].updatedAt.toISOString();
+			}
+			return {
+				posts: posts.map((p) => {
+					return {
+						...p._doc,
+						createdAt: p.createdAt.toISOString(),
+						updatedAt: p.updatedAt.toISOString(),
+					};
+				}),
+				totalItems: totalItems,
+			};
+		} catch (err) {
+			if (!err.statusCode) {
+				err.statusCode = 500;
+			}
+			next(err);
+		}
 	},
 };
