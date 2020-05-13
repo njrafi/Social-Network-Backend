@@ -154,6 +154,7 @@ module.exports = {
 			throw err;
 		}
 	},
+
 	updatePost: async function (args, req) {
 		if (!req.isAuth) {
 			const error = new Error("Not Authinticated");
@@ -192,12 +193,12 @@ module.exports = {
 				error.statusCode = 403;
 				throw error;
 			}
-			if (imageUrl) {
-				if (post.imageUrl) utils.deleteImage(post.imageUrl);
+			if (imageUrl && !imageUrl.isEmpty) {
+				if (post.imageUrl && !post.imageUrl.isEmpty) utils.deleteImage(post.imageUrl);
 				post.imageUrl = imageUrl;
-            }
-            post.title = title
-            post.content = content
+			}
+			post.title = title;
+			post.content = content;
 			const editedPost = await post.save();
 			return {
 				...editedPost._doc,
@@ -209,6 +210,41 @@ module.exports = {
 			throw err;
 		}
 	},
+
+	deletePost: async function (args, req) {
+		console.log("In Delete post");
+		if (!req.isAuth) {
+			const error = new Error("Not Authinticated");
+			error.code = 401;
+			throw error;
+		}
+		const postId = args.postId;
+		const userId = req.userId;
+		try {
+			const post = await Post.findById(postId);
+			if (!post) {
+				const error = new Error("Could not find Post");
+				error.statusCode = 404;
+				throw error;
+			}
+			if (post.creator != req.userId) {
+				const error = new Error("Can not Delete other's post");
+				error.statusCode = 403;
+				throw error;
+			}
+			if (post.imageUrl && !post.imageUrl.isEmpty) utils.deleteImage(post.imageUrl);
+			await Post.findByIdAndDelete(postId);
+
+			const user = await User.findById(userId);
+			user.posts.pull(postId);
+			await user.save();
+			return "Post Deleted Successfully!";
+		} catch (err) {
+			err.code = 500;
+			throw err;
+		}
+	},
+
 	getPosts: async function (args, req) {
 		if (!req.isAuth) {
 			const error = new Error("Not Authenticated");
