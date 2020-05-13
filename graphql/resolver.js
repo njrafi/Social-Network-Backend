@@ -194,7 +194,8 @@ module.exports = {
 				throw error;
 			}
 			if (imageUrl && !imageUrl.isEmpty) {
-				if (post.imageUrl && !post.imageUrl.isEmpty) utils.deleteImage(post.imageUrl);
+				if (post.imageUrl && !post.imageUrl.isEmpty)
+					utils.deleteImage(post.imageUrl);
 				post.imageUrl = imageUrl;
 			}
 			post.title = title;
@@ -232,13 +233,38 @@ module.exports = {
 				error.statusCode = 403;
 				throw error;
 			}
-			if (post.imageUrl && !post.imageUrl.isEmpty) utils.deleteImage(post.imageUrl);
+			if (post.imageUrl && !post.imageUrl.isEmpty)
+				utils.deleteImage(post.imageUrl);
 			await Post.findByIdAndDelete(postId);
 
 			const user = await User.findById(userId);
 			user.posts.pull(postId);
 			await user.save();
 			return "Post Deleted Successfully!";
+		} catch (err) {
+			err.code = 500;
+			throw err;
+		}
+	},
+
+	updateStatus: async function (args, req) {
+		console.log("In Update Status");
+		if (!req.isAuth) {
+			const error = new Error("Not Authinticated");
+			error.code = 401;
+			throw error;
+		}
+		const userId = req.userId;
+		const status = args.status;
+		try {
+			const user = await User.findById(userId);
+			if (!user) {
+				const err = new Error("User not found");
+				throw err;
+			}
+			user.status = status;
+			const updatedUser = await user.save();
+			return "Status Updated Successfully";
 		} catch (err) {
 			err.code = 500;
 			throw err;
@@ -303,6 +329,27 @@ module.exports = {
 				createdAt: post.createdAt.toISOString(),
 				updatedAt: post.updatedAt.toISOString(),
 			};
+		} catch (err) {
+			err.code = 500;
+			throw err;
+		}
+	},
+
+	getStatus: async function (args, req) {
+		console.log("In get Status");
+		if (!req.isAuth) {
+			const error = new Error("Not Authinticated");
+			error.code = 401;
+			throw error;
+		}
+		const userId = req.userId;
+		try {
+			const user = await User.findById(userId);
+			if (!user) {
+				const err = new Error("User not found");
+				throw err;
+			}
+			return user.status;
 		} catch (err) {
 			err.code = 500;
 			throw err;
