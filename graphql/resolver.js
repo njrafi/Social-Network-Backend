@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const secrets = require("../secrets");
+const utils = require("../utils/helperFunctions");
 
 module.exports = {
 	createUser: async function (args, req) {
@@ -153,10 +154,64 @@ module.exports = {
 			throw err;
 		}
 	},
-
-	getPosts: async function (args, req) {
+	updatePost: async function (args, req) {
 		if (!req.isAuth) {
 			const error = new Error("Not Authinticated");
+			error.code = 401;
+			throw error;
+		}
+
+		console.log("In update Post");
+		const title = args.postInput.title;
+		const content = args.postInput.content;
+		const imageUrl = args.postInput.imageUrl;
+		const userId = req.userId;
+		const postId = args.postId;
+		const errors = [];
+		if (!validator.isLength(title, { min: 5 })) {
+			errors.push("Title is invalid");
+		}
+		if (!validator.isLength(content, { min: 5 })) {
+			errors.push("Content is invalid");
+		}
+		if (errors.length > 0) {
+			const error = new Error("Invalid Input");
+			error.data = errors;
+			error.code = 422;
+			throw error;
+		}
+		try {
+			const post = await Post.findById(postId).populate("creator");
+			if (!post) {
+				const error = new Error("Could not find Post");
+				error.statusCode = 404;
+				throw error;
+			}
+			if (post.creator._id.toString() != userId) {
+				const error = new Error("Can not edit other's post");
+				error.statusCode = 403;
+				throw error;
+			}
+			if (imageUrl) {
+				if (post.imageUrl) utils.deleteImage(post.imageUrl);
+				post.imageUrl = imageUrl;
+            }
+            post.title = title
+            post.content = content
+			const editedPost = await post.save();
+			return {
+				...editedPost._doc,
+				createdAt: editedPost.createdAt.toISOString(),
+				updatedAt: editedPost.updatedAt.toISOString(),
+			};
+		} catch (err) {
+			err.code = 500;
+			throw err;
+		}
+	},
+	getPosts: async function (args, req) {
+		if (!req.isAuth) {
+			const error = new Error("Not Authenticated");
 			error.code = 401;
 			throw error;
 		}

@@ -133,7 +133,7 @@ exports.updatePost = (req, res, next) => {
 			}
 			post.title = title;
 			post.content = content;
-			if (imageUrl) {
+			if (imageUrl && !imageUrl.isEmpty()) {
 				if (post.imageUrl) deleteImage(post.imageUrl);
 				post.imageUrl = imageUrl;
 			}
