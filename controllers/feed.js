@@ -61,7 +61,7 @@ exports.getPost = (req, res, next) => {
 		});
 };
 
-exports.createPost = (req, res, next) => {
+exports.createPost = async (req, res, next) => {
 	console.log("In Create Post");
 
 	const errors = validationResult(req);
@@ -84,36 +84,32 @@ exports.createPost = (req, res, next) => {
 	});
 
 	let creator;
+	try {
+		await post.save();
+		const user = await User.findById(userId);
+		user.posts.push(post);
+		creator = user;
+		await user.save();
 
-	post
-		.save()
-		.then((result) => {
-			return User.findById(userId);
-		})
-		.then((user) => {
-			user.posts.push(post);
-			creator = user;
-			return user.save();
-		})
-		.then((result) => {
-			post.creator = creator;
-			io.getIO().emit("posts", {
-				action: "create",
-				post: post,
-			});
-			console.log("Post Created Successfully!");
-			return res.status(201).json({
-				message: "Post Created Successfully!",
-				post: post,
-				creator: { _id: creator._id, name: creator.name },
-			});
-		})
-		.catch((err) => {
-			if (!err.statusCode) {
-				err.statusCode = 500;
-			}
-			next(err);
+		post.creator = creator;
+		io.getIO().emit("posts", {
+			action: "create",
+			post: post,
 		});
+		console.log("Post Created Successfully!");
+		res.status(201).json({
+			message: "Post Created Successfully!",
+			post: post,
+			creator: { _id: creator._id, name: creator.name },
+		});
+		return user;
+	} catch (err) {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+		return err;
+	}
 };
 
 exports.updatePost = (req, res, next) => {

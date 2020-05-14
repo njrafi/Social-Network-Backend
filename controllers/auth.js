@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const secrets = require("../secrets");
 
-exports.login = (req, res, next) => {
+exports.login = async (req, res, next) => {
 	console.log("In signUp route");
 	console.log(req.body);
 
@@ -19,49 +19,49 @@ exports.login = (req, res, next) => {
 	const email = req.body.email;
 	const password = req.body.password;
 	let loadedUser;
+	try {
+		const user = await User.findOne({ email: email });
 
-	User.findOne({ email: email })
-		.then((user) => {
-			if (!user) {
-				const error = new Error("User Not found.Check your email");
-				error.statusCode = 422;
-				error.data = errors.array();
-				throw error;
-			}
-			loadedUser = user;
-			return bcrypt.compare(password, user.password);
-		})
-		.then((matched) => {
-			if (!matched) {
-				const error = new Error("Wrong password");
-				error.statusCode = 422;
-				error.data = errors.array();
-				throw error;
-			}
-			const token = jwt.sign(
-				{
-					email: loadedUser.email,
-					userId: loadedUser._id.toString(),
-				},
-				secrets.jwtSecretKey,
-				{
-					expiresIn: "1h",
-				}
-			);
+		if (!user) {
+			const error = new Error("User Not found.Check your email");
+			error.statusCode = 422;
+			error.data = errors.array();
+			throw error;
+		}
+		loadedUser = user;
+		const matched = await bcrypt.compare(password, user.password);
 
-			console.log("Login Successfully");
-			return res.status(200).json({
-				message: "Login Successfully",
-				userId: loadedUser._id,
-				token: token,
-			});
-		})
-		.catch((err) => {
-			if (!err.statusCode) {
-				err.statusCode = 500;
+		if (!matched) {
+			const error = new Error("Wrong password");
+			error.statusCode = 422;
+			error.data = errors.array();
+			throw error;
+		}
+		const token = jwt.sign(
+			{
+				email: loadedUser.email,
+				userId: loadedUser._id.toString(),
+			},
+			secrets.jwtSecretKey,
+			{
+				expiresIn: "1h",
 			}
-			next(err);
+		);
+
+		console.log("Login Successfully");
+		return res.status(200).json({
+			message: "Login Successfully",
+			userId: loadedUser._id,
+			token: token,
 		});
+	} catch (err) {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+		return err;
+	}
+	return;
 };
 
 exports.signUp = (req, res, next) => {
