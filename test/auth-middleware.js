@@ -2,9 +2,11 @@ const authMiddleWare = require("../middlewares/is-auth");
 const expect = require("chai").expect;
 const jwt = require("jsonwebtoken");
 const sinon = require("sinon");
+const dotenv = require("dotenv");
 
 describe("Auth Middleware", () => {
 	it("should yield a userId after decoding the token", () => {
+		dotenv.config();
 		const req = {
 			get: (headerName) => {
 				return "Bearer dummy";

@@ -4,12 +4,13 @@ const expect = require("chai").expect;
 const sinon = require("sinon");
 const FeedController = require("../controllers/feed");
 const mongoose = require("mongoose");
-const secrets = require("../secrets");
 const io = require("../socket");
+const dotenv = require("dotenv");
 
 describe("Feed Controller", () => {
 	before(async () => {
-		await mongoose.connect(secrets.testMongoDbUri, {
+		dotenv.config();
+		await mongoose.connect(process.env.testMongoDbUri, {
 			useNewUrlParser: true,
 			useUnifiedTopology: true,
 		});

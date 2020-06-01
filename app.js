@@ -4,13 +4,13 @@ const feedRoutes = require("./routes/feed");
 const authRoutes = require("./routes/auth");
 const statusRoutes = require("./routes/status");
 const mongoose = require("mongoose");
-const secrets = require("./secrets");
 const path = require("path");
 const multer = require("multer");
-const mongoDbUri = secrets.mongoDbUri;
-
+const dotenv = require("dotenv");
+dotenv.config();
 const app = express();
 
+const mongoDbUri = process.env.mongoDbUri;
 const fileStorage = multer.diskStorage({
 	destination: (req, file, cb) => {
 		cb(null, "images");
@@ -66,6 +66,8 @@ app.use((error, req, res, next) => {
 	});
 });
 
+console.log(process.env);
+
 mongoose
 	.connect(mongoDbUri, {
 		useNewUrlParser: true,
@@ -73,8 +75,8 @@ mongoose
 	})
 	.then((result) => {
 		console.log("connected to mongoDb Database");
-		console.log("server started at port " + secrets.port);
-		const server = app.listen(secrets.port);
+		console.log("server started at port " + process.env.port);
+		const server = app.listen(process.env.port);
 
 		// Socket.io Setup
 		const io = require("./socket").init(server);

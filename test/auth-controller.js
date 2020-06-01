@@ -4,8 +4,8 @@ const sinon = require("sinon");
 const AuthController = require("../controllers/auth");
 const StatusController = require("../controllers/status");
 const mongoose = require("mongoose");
-const secrets = require("../secrets");
-
+const dotenv = require("dotenv");
+dotenv.config();
 describe("Auth Controller - Login", () => {
 	it("should throw an error if accessing the database fails", async () => {
 		sinon.stub(User, "findOne");
@@ -24,7 +24,7 @@ describe("Auth Controller - Login", () => {
 
 	it("should send a response with a valid user status for an existing user", async () => {
 		try {
-			await mongoose.connect(secrets.testMongoDbUri, {
+			await mongoose.connect(process.env.testMongoDbUri, {
 				useNewUrlParser: true,
 				useUnifiedTopology: true,
 			});

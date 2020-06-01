@@ -2,7 +2,6 @@ const User = require("../models/user");
 const { validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const secrets = require("../secrets");
 
 exports.login = async (req, res, next) => {
 	console.log("In signUp route");
@@ -42,7 +41,7 @@ exports.login = async (req, res, next) => {
 				email: loadedUser.email,
 				userId: loadedUser._id.toString(),
 			},
-			secrets.jwtSecretKey,
+			process.env.jwtSecretKey,
 			{
 				expiresIn: "1h",
 			}
