@@ -1,21 +1,23 @@
 const User = require("../models/user");
 const { validationResult } = require("express-validator");
 
-exports.getStatus = (req, res, next) => {
+exports.getStatus = async (req, res, next) => {
 	console.log("in Get Status");
-	User.findById(req.userId)
-		.then((user) => {
-			return res.status(200).json({
-				message: "User Status",
-				status: user.status,
-			});
-		})
-		.catch((err) => {
-			if (!err.statusCode) {
-				err.statusCode = 500;
-			}
-			next(err);
+
+	try {
+		const user = await User.findById(req.userId);
+
+		return res.status(200).json({
+			message: "User Status",
+			status: user.status,
 		});
+	} catch (err) {
+		if (!err.statusCode) {
+			err.statusCode = 500;
+		}
+		next(err);
+		return err;
+	}
 };
 
 exports.updateStatus = (req, res, next) => {
